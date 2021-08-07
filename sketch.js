@@ -13,6 +13,9 @@ var boatSpritedata, boatSpritesheet;
 var brokenBoatAnimation = [];
 var brokenBoatSpritedata, brokenBoatSpritesheet;
 
+var isGameOver = false;
+var isLaughing = false;
+
 function preload() {
   backgroundImg = loadImage("./assets/background.gif");
   towerImage = loadImage("./assets/tower.png");
@@ -20,6 +23,9 @@ function preload() {
   boatSpritesheet = loadImage("assets/boat/boat.png");
   brokenBoatSpritedata = loadJSON("assets/boat/broken_boat.json");
   brokenBoatSpritesheet = loadImage("assets/boat/broken_boat.png");
+  backgroundMusic = loadSound("./assets/background_music.mp3");
+  pirateLaughSound = loadSound("./assets/pirate_laugh.mp3");
+  cannonExplosion = loadSound("./assets/cannon_explosion.mp3");
 }
 
 function setup() {
@@ -30,7 +36,7 @@ function setup() {
   ground = new Ground(0, height - 1, width * 2, 1);
   tower = new Tower(150, 350, 160, 310);
   cannon = new Cannon(180, 110, 100, 50, angle);
-   boat = new Boat(width, height - 60, 170, 170, -60, boatAnimation);
+  boat = new Boat(width, height - 60, 170, 170, -60, boatAnimation);
 
   var boatFrames = boatSpritedata.frames;
   for (var i = 0; i < boatFrames.length; i++) {
@@ -51,28 +57,49 @@ function draw() {
   background(189);
   image(backgroundImg, 0, 0, width, height);
 
+  if (!backgroundMusic.isPlaying()) {
+    backgroundMusic.play();
+    backgroundMusic.setVolume(0.1);
+  }
 
   Engine.update(engine);
   ground.display();
+ Matter.Body.setVelocity(boat.body, {
+        x: -0.9,
+        y: 0
+      });
 
-
-  Matter.Body.setVelocity(boat.body, {
-    x: -0.9,
-    y: 0
-  });
-  boat.display()
-  boat.animate();
+      boat.display();
+      boat.animate();
+      var collision = Matter.SAT.collides(tower.body, boat.body);
+      if (collision.collided && !boat.isBroken) {
+         //Added isLaughing flag and setting isLaughing to true
+         if(!isLaughing && !pirateLaughSound.isPlaying()){
+          pirateLaughSound.play();
+          isLaughing = true
+        }
+        isGameOver = true;
+        gameOver();} 
+    
 
  
   for (var i = 0; i < balls.length; i++) {
     showCannonBalls(balls[i], i);
-  }
+      if (balls[i] !== undefined && boat !== undefined) {
+        var collision = Matter.SAT.collides(balls[i].body, boat.body);
+        if (collision.collided) {
+          boat.remove();
 
+          Matter.World.remove(world, balls[i].body);
+          balls.splice(i, 1);
+          i--;
+          
+        
+      } 
+    }
+  }
   cannon.display();
   tower.display();
-
- 
-
 
 
 }
@@ -98,15 +125,36 @@ function showCannonBalls(ball, index) {
 }
 
 
-  
 
+     
+ 
 
 
 //releasing the cannonball on key release
 function keyReleased() {
   if (keyCode === DOWN_ARROW) {
+    cannonExplosion.play();
+
     balls[balls.length - 1].shoot();
   }
 }
 
 
+
+function gameOver() {
+  swal(
+    {
+      title: `Game Over!!!`,
+      text: "Thanks for playing!!",
+      imageUrl:
+        "https://raw.githubusercontent.com/whitehatjr/PiratesInvasion/main/assets/boat.png",
+      imageSize: "150x150",
+      confirmButtonText: "Play Again"
+    },
+    function(isConfirm) {
+      if (isConfirm) {
+        location.reload();
+      }
+    }
+  );
+}

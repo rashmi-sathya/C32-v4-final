@@ -20,15 +20,15 @@ class Boat {
     this.speed += 0.05 % 1.1;
   }
 
-  remove(index) {
+  remove() {
     this.animation = brokenBoatAnimation;
     this.speed = 0.05;
     this.width = 300;
     this.height = 300;
-    setTimeout(() => {
+    //setTimeout(() => {
       Matter.World.remove(world, boat.body);
-      boats.splice(index, 1);
-    }, 2000);
+     // boat.splice(index, 1);
+   // }, 2000);
   }
 
   display() {
